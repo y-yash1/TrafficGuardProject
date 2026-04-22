@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrafficGuard | Manage Vehicles</title>
+    <link rel="stylesheet" href="/static/css/citizendash.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .vehicle-row { display:flex; align-items:center; gap:16px; padding:16px 0; border-bottom:1px solid var(--border-color); }
+        .vehicle-row:last-of-type { border-bottom:none; }
+        .v-icon { width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; background:#F3F4F6; flex-shrink:0; }
+        .v-details { flex:1; }
+        .v-plate { font-size:15px; font-weight:800; color:var(--text-dark); font-family:monospace; letter-spacing:1px; }
+        .v-info { font-size:12px; color:var(--text-muted); margin-top:3px; }
+        .btn-remove { background:#FEE2E2; color:#991B1B; border:none; padding:8px 16px; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; }
+        .btn-remove:hover { background:#FCA5A5; }
+        .add-vehicle-section { background:#F9FAFB; border-radius:14px; padding:24px; margin-top:20px; border:1px dashed var(--border-color); }
+        .add-vehicle-section h4 { font-size:15px; font-weight:700; margin-bottom:18px; }
+        .input-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:14px; }
+        .input-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:14px; }
+        .input-box label { font-size:12px; font-weight:600; color:var(--text-muted); display:block; margin-bottom:5px; }
+        .input-box input, .input-box select { width:100%; padding:11px 14px; border:1px solid var(--border-color); border-radius:10px; font-size:14px; outline:none; background:#fff; }
+        .input-box input:focus, .input-box select:focus { border-color:var(--accent-indigo); }
+        .btn-primary-dark { background:#000000; color:#fff; border:none; padding:14px 28px; border-radius:12px; font-size:14px; font-weight:700; cursor:pointer; margin-top:8px; }
+        .btn-primary-dark:hover { opacity:.85; }
+        .profile-edit-section { background:#fff; border:1px solid var(--border-color); border-radius:16px; padding:24px; margin-bottom:24px; }
+        .profile-edit-section h3 { font-size:17px; font-weight:700; margin-bottom:20px; }
+        .profile-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+        .profile-field label { font-size:12px; font-weight:600; color:var(--text-muted); display:block; margin-bottom:5px; }
+        .profile-field input { width:100%; padding:11px 14px; border:1px solid var(--border-color); border-radius:10px; font-size:14px; outline:none; background:#fff; }
+        .profile-field input[readonly] { background:#F9FAFB; color:var(--text-muted); cursor:not-allowed; }
+        .profile-field input:not([readonly]):focus { border-color:var(--accent-indigo); }
+        .centered-garage-container { max-width:800px; }
+        .insurance-warn { color:#92400E; background:#FEF3C7; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:600; }
+        .insurance-ok { color:#065F46; background:#D1FAE5; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:600; }
+        .success-msg { background:#D1FAE5; color:#065F46; padding:12px 16px; border-radius:10px; margin-bottom:16px; font-size:14px; font-weight:600; display:none; }
+        .edit-hint { font-size:11px; color:var(--accent-indigo); font-weight:600; margin-top:4px; }
+    </style>
+</head>
+<body>
+<nav class="citizen-nav">
+    <div class="logo-section" onclick="window.location.reload();" title="Refresh">
+        <div class="ios-pulse-icon"><svg viewBox="0 0 100 100"><defs><linearGradient id="pg" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:rgba(79,70,229,0.1)"/><stop offset="50%" style="stop-color:rgba(79,70,229,1)"/><stop offset="100%" style="stop-color:rgba(79,70,229,0.1)"/></linearGradient></defs><rect x="15" y="32" width="70" height="6" rx="3" fill="#F3F4F6"/><rect x="15" y="47" width="70" height="6" rx="3" fill="#F3F4F6"/><rect x="15" y="62" width="70" height="6" rx="3" fill="#F3F4F6"/><rect x="15" y="32" width="30" height="6" rx="3" fill="url(#pg)" class="p-line p1"/><rect x="15" y="47" width="30" height="6" rx="3" fill="url(#pg)" class="p-line p2"/><rect x="15" y="62" width="30" height="6" rx="3" fill="url(#pg)" class="p-line p3"/></svg></div>
+        <div class="logo-text"><h1>TrafficGuard</h1></div>
+    </div>
+    <div class="nav-links">
+        <a href="/citizen-dashboard.html" class="nav-link">Overview</a>
+        <a href="/citizen-violations.html" class="nav-link">My E-Challans</a>
+        <a href="/citizen-profile.html" class="nav-link active">Manage Vehicles</a>
+    </div>
+    <div class="nav-profile" onclick="toggleDropdown(event)">
+        <div style="text-align:right;"><span id="nav-name" style="font-size:13px;font-weight:600;">Loading...</span><br><span style="font-size:11px;color:gray;">View Profile ▼</span></div>
+        <div class="avatar" id="nav-avatar">?</div>
+        <div class="profile-dropdown" id="pDrop" onclick="event.stopPropagation()">
+            <div class="dropdown-header"><div class="avatar-large" id="dd-avatar">?</div><div><h4 id="dd-name">Loading...</h4><span id="dd-email" style="font-size:12px;color:var(--text-muted);">—</span><br><span class="verified-badge">✓ Verified Citizen ID</span></div></div>
+            <div class="dropdown-body">
+                <div class="info-row-mini"><span>Phone</span><strong id="dd-phone">—</strong></div>
+                <div class="info-row-mini"><span>Aadhaar</span><strong id="dd-aadhaar">—</strong></div>
+            </div>
+            <a href="#" onclick="API.logout()" class="logout-btn-full">[→ Secure Sign Out</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container centered-garage-container">
+    <div style="margin-bottom:24px;"><h1>Account & Vehicles</h1><p>Manage your connected vehicles and personal details.</p></div>
+
+    <!-- Personal Information (editable) -->
+    <div class="profile-edit-section">
+        <h3>👤 Personal Information</h3>
+        <p class="edit-hint" style="margin-bottom:16px;">✏️ You can update your name, phone, and Aadhaar number below.</p>
+        <div id="profile-success" class="success-msg">✅ Profile updated successfully!</div>
+        <div class="profile-grid">
+            <div class="profile-field">
+                <label>Full Name</label>
+                <input type="text" id="pf-name" placeholder="Your full name">
+            </div>
+            <div class="profile-field">
+                <label>Phone</label>
+                <input type="text" id="pf-phone" placeholder="+91 XXXXXXXXXX">
+            </div>
+            <div class="profile-field">
+                <label>Email</label>
+                <input type="text" id="pf-email" readonly placeholder="—">
+            </div>
+            <div class="profile-field">
+                <label>Aadhaar Number (12 digits)</label>
+                <input type="text" id="pf-aadhaar" maxlength="12" placeholder="Enter 12-digit Aadhaar" oninput="this.value=this.value.replace(/\D/g,'').slice(0,12)">
+            </div>
+            <div class="profile-field">
+                <label>Member Since</label>
+                <input type="text" id="pf-since" readonly placeholder="—">
+            </div>
+        </div>
+        <button class="btn-primary-dark" onclick="saveProfile()" style="margin-top:16px;">💾 Save Changes</button>
+    </div>
+
+    <!-- Vehicles / Garage -->
+    <div class="ft-card">
+        <div id="vehicle-success" class="success-msg">✅ Vehicle linked successfully!</div>
+        <div class="card-header" style="border-bottom:none;margin-bottom:0;">
+            <span class="card-title">🚗 My Garage</span>
+            <span id="vehicle-count" style="font-size:13px;color:var(--text-muted);">Loading...</span>
+        </div>
+
+        <div id="vehicle-list" style="border-top:1px solid var(--border-color);margin-top:12px;">
+            <p style="font-size:13px;color:var(--text-muted);padding:16px 0;">Loading vehicles...</p>
+        </div>
+
+        <!-- Link Vehicle Form — includes DL number here -->
+        <div class="add-vehicle-section">
+            <h4>+ Link a New Vehicle</h4>
+            <div class="input-grid">
+                <div class="input-box"><label>License Plate Number *</label><input type="text" id="new-plate" placeholder="E.G. KL-01-AB-9999" style="text-transform:uppercase;"></div>
+                <div class="input-box"><label>Vehicle Type</label>
+                    <select id="new-type">
+                        <option value="Car">🚗 Car / SUV</option>
+                        <option value="Motorcycle">🏍️ Motorcycle</option>
+                        <option value="Auto">🛺 Auto Rickshaw</option>
+                        <option value="Truck">🚛 Truck / LCV</option>
+                    </select>
+                </div>
+            </div>
+            <div class="input-grid">
+                <div class="input-box"><label>Make (Brand)</label><input type="text" id="new-make" placeholder="e.g. Honda, Maruti"></div>
+                <div class="input-box"><label>Model</label><input type="text" id="new-model" placeholder="e.g. City, Swift"></div>
+            </div>
+            <div class="input-grid-3">
+                <div class="input-box"><label>Year</label><input type="number" id="new-year" placeholder="e.g. 2021" min="1990" max="2026"></div>
+                <div class="input-box"><label>Color</label><input type="text" id="new-color" placeholder="e.g. White, Black"></div>
+                <div class="input-box"><label>Insurance Expiry</label><input type="date" id="new-insurance"></div>
+            </div>
+            <div class="input-grid">
+                <div class="input-box">
+                    <label>Driving Licence Number</label>
+                    <input type="text" id="new-dl" placeholder="e.g. DL-1234567890123">
+                </div>
+                <div class="input-box" style="display:flex;align-items:flex-end;">
+                    <p style="font-size:12px;color:var(--text-muted);">Vehicle will be verified against RTO records. Make sure plate number is accurate.</p>
+                </div>
+            </div>
+            <button class="btn-primary-dark" onclick="addVehicle()">✅ Verify & Link Vehicle</button>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/api.js"></script>
+<script>
+    if (!API.requireRole('citizen')) {}
+
+    function toggleDropdown(e) { if(e) e.stopPropagation(); document.getElementById('pDrop').classList.toggle('active'); }
+    document.addEventListener('click', () => document.getElementById('pDrop').classList.remove('active'));
+
+    const vIcons = { Car:'🚗', Motorcycle:'🏍️', Auto:'🛺', Truck:'🚛' };
+
+    async function loadProfile() {
+        try {
+            const p = await API.get('/api/profile');
+            const initials = (p.full_name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+            document.getElementById('nav-name').textContent = p.full_name || 'Citizen';
+            document.getElementById('nav-avatar').textContent = initials;
+            document.getElementById('dd-avatar').textContent = initials;
+            document.getElementById('dd-name').textContent = p.full_name || '—';
+            document.getElementById('dd-email').textContent = p.email || '—';
+            document.getElementById('dd-phone').textContent = p.phone || '—';
+            document.getElementById('dd-aadhaar').textContent = p.aadhaar || 'Not linked';
+
+            // Fill profile form (editable fields)
+            document.getElementById('pf-name').value = p.full_name || '';
+            document.getElementById('pf-phone').value = p.phone || '';
+            document.getElementById('pf-email').value = p.email || '';
+            document.getElementById('pf-aadhaar').value = p.aadhaar || '';
+            document.getElementById('pf-since').value = fmtDate(p.created_at);
+        } catch(e) { console.error(e); }
+    }
+
+    async function saveProfile() {
+        const name = document.getElementById('pf-name').value.trim();
+        const phone = document.getElementById('pf-phone').value.trim();
+        const aadhaar = document.getElementById('pf-aadhaar').value.trim();
+        if (!name) { showToast('Name cannot be empty', 'error'); return; }
+        if (aadhaar && (!/^\d{12}$/.test(aadhaar))) { showToast('Aadhaar must be exactly 12 digits', 'error'); return; }
+        try {
+            await API.patch('/api/profile', { full_name: name, phone, aadhaar });
+            document.getElementById('profile-success').style.display = 'block';
+            setTimeout(() => document.getElementById('profile-success').style.display = 'none', 3000);
+            showToast('Profile updated!');
+            loadProfile();
+        } catch(err) { showToast('Failed: ' + err.message, 'error'); }
+    }
+
+    async function loadVehicles() {
+        try {
+            const vehicles = await API.get('/api/vehicles');
+            document.getElementById('vehicle-count').textContent = `${vehicles.length} Registered`;
+            const el = document.getElementById('vehicle-list');
+            if (!vehicles.length) {
+                el.innerHTML = '<p style="font-size:13px;color:var(--text-muted);padding:16px 0;">No vehicles linked yet. Add one below.</p>';
+                return;
+            }
+            el.innerHTML = vehicles.map(v => {
+                const insExpiry = new Date(v.insurance_expiry);
+                const insExpired = insExpiry < new Date();
+                const insLabel = v.insurance_expiry
+                    ? `<span class="${insExpired ? 'insurance-warn' : 'insurance-ok'}">${insExpired ? '⚠️ Expired' : '✅ Valid'} ${fmtDate(v.insurance_expiry)}</span>`
+                    : '<span class="insurance-warn">⚠️ No Insurance</span>';
+                return `<div class="vehicle-row">
+                    <div class="v-icon">${vIcons[v.vehicle_type] || '🚗'}</div>
+                    <div class="v-details">
+                        <div class="v-plate">${v.plate_number}</div>
+                        <div class="v-info">${v.make} ${v.model} • ${v.year || '—'} • ${v.color || '—'}</div>
+                        <div style="margin-top:6px;display:flex;gap:8px;align-items:center;">${insLabel}
+                            ${v.pending_count > 0 ? `<span style="background:#FEE2E2;color:#991B1B;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;">${v.pending_count} Pending Fine(s) — ${fmtINR(v.pending_amount)}</span>` : '<span style="background:#D1FAE5;color:#065F46;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;">✅ Clear</span>'}
+                        </div>
+                    </div>
+                    <button class="btn-remove" onclick="if(confirm('Remove ${v.plate_number}?')) showToast('Contact admin to remove a vehicle.','error')">REMOVE</button>
+                </div>`;
+            }).join('');
+        } catch(e) { console.error(e); }
+    }
+
+    async function addVehicle() {
+        const plate = document.getElementById('new-plate').value.trim().replace(/\s+/g,'').toUpperCase();
+        if (!plate) { showToast('Enter a license plate number', 'error'); return; }
+        try {
+            await API.post('/api/vehicles', {
+                plate_number: plate,
+                vehicle_type: document.getElementById('new-type').value,
+                make: document.getElementById('new-make').value.trim(),
+                model: document.getElementById('new-model').value.trim(),
+                year: document.getElementById('new-year').value || null,
+                color: document.getElementById('new-color').value.trim(),
+                insurance_expiry: document.getElementById('new-insurance').value || null,
+                dl_number: document.getElementById('new-dl').value.trim()
+            });
+            ['new-plate','new-make','new-model','new-year','new-color','new-insurance','new-dl'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('vehicle-success').style.display = 'block';
+            setTimeout(() => document.getElementById('vehicle-success').style.display = 'none', 3000);
+            showToast(`Vehicle ${plate} linked successfully!`);
+            loadVehicles();
+        } catch(err) { showToast('Error: ' + err.message, 'error'); }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => { loadProfile(); loadVehicles(); });
+</script>
+</body>
+</html>

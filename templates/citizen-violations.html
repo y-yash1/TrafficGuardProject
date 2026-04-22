@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrafficGuard | My E-Challans</title>
+    <link rel="stylesheet" href="/static/css/citizendash.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .challan-card { background:#fff; border:1px solid var(--border-color); border-radius:16px; padding:20px 24px; margin-bottom:16px; display:flex; gap:20px; align-items:flex-start; transition:box-shadow .2s; }
+        .challan-card:hover { box-shadow:0 4px 20px rgba(0,0,0,.08); }
+        .c-icon-box { width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
+        .icon-red { background:#FEE2E2; } .icon-orange { background:#FEF3C7; } .icon-green { background:#D1FAE5; } .icon-blue { background:#DBEAFE; }
+        .c-details { flex:1; min-width:0; }
+        .c-header { display:flex; align-items:center; gap:10px; margin-bottom:6px; flex-wrap:wrap; }
+        .c-title { font-size:15px; font-weight:700; color:var(--text-dark); }
+        .status-badge { padding:3px 10px; border-radius:20px; font-size:11px; font-weight:800; letter-spacing:.5px; }
+        .badge-unpaid { background:#FEE2E2; color:#991B1B; }
+        .badge-overdue { background:#FFEDD5; color:#9A3412; }
+        .badge-settled { background:#D1FAE5; color:#065F46; }
+        .badge-contested { background:#DBEAFE; color:#1E40AF; }
+        .c-meta { font-size:12px; color:var(--text-muted); line-height:1.8; }
+        .c-meta strong { color:var(--text-dark); }
+        .c-action-area { display:flex; flex-direction:column; align-items:flex-end; gap:8px; min-width:140px; }
+        .c-amount-due { font-size:10px; font-weight:700; text-transform:uppercase; color:var(--text-muted); margin:0; letter-spacing:.5px; }
+        .c-price { font-size:22px; font-weight:800; color:var(--text-dark); margin:0; }
+        .btn-evidence { background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); border:none; padding:9px 16px; border-radius:10px; font-size:12px; font-weight:700; cursor:pointer; color:white; width:100%; transition:all .3s; box-shadow:0 2px 8px rgba(102, 126, 234, 0.3); }
+        .btn-evidence:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(102, 126, 234, 0.5); }
+        .btn-evidence:active { transform:translateY(0); }
+        .btn-pay-secure { background:var(--accent-indigo); color:white; border:none; padding:10px 18px; border-radius:10px; font-size:13px; font-weight:700; cursor:pointer; width:100%; }
+        .btn-pay-secure:hover { opacity:.9; }
+        .btn-download { background:#F3F4F6; border:none; padding:9px 14px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; width:100%; color:var(--text-dark); }
+        .filter-group { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+        .search-box { padding:10px 16px; border-radius:10px; border:1px solid var(--border-color); font-size:14px; outline:none; width:240px; }
+        .status-filters { display:flex; gap:6px; }
+        .filter-btn { padding:8px 16px; border-radius:20px; font-size:13px; font-weight:600; cursor:pointer; border:1px solid var(--border-color); background:#fff; color:var(--text-muted); }
+        .filter-btn.active { background:var(--accent-indigo); color:#fff; border-color:var(--accent-indigo); }
+        .page-header-row { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:24px; flex-wrap:wrap; gap:16px; }
+        .summary-bar { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:28px; }
+        .sum-card { background:#fff; border:1px solid var(--border-color); border-radius:14px; padding:16px 20px; }
+        .sum-val { font-size:22px; font-weight:800; color:var(--text-dark); }
+        .sum-label { font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; margin-top:4px; }
+        .empty-state { text-align:center; padding:60px 20px; color:var(--text-muted); }
+        .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); backdrop-filter:blur(4px); display:none; justify-content:center; align-items:center; z-index:9999; }
+        .modal-overlay.active { display:flex; }
+        .modal-box { background:#fff; width:420px; border-radius:20px; padding:28px; box-shadow:0 20px 60px rgba(0,0,0,.2); }
+        .modal-box h3 { margin-bottom:20px; font-size:18px; }
+        .pay-methods { display:flex; gap:8px; margin-bottom:20px; }
+        .pay-method-btn { flex:1; padding:10px; border:1px solid var(--border-color); border-radius:10px; font-size:13px; font-weight:600; cursor:pointer; background:#fff; }
+        .pay-method-btn.active { background:var(--accent-indigo); color:#fff; border-color:var(--accent-indigo); }
+        .pay-field { margin-bottom:14px; }
+        .pay-field label { font-size:12px; font-weight:600; color:var(--text-muted); display:block; margin-bottom:5px; }
+        .pay-field input { width:100%; padding:11px 14px; border:1px solid var(--border-color); border-radius:10px; font-size:14px; outline:none; }
+        .pay-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+        .btn-pay-large { width:100%; padding:16px; background:var(--accent-indigo); color:#fff; border:none; border-radius:12px; font-size:15px; font-weight:700; cursor:pointer; margin-top:8px; }
+        .secure-note { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-muted); justify-content:center; margin-top:12px; }
+        .receipt-modal { width:380px; }
+        .receipt-row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #F3F4F6; font-size:13px; }
+        .receipt-row:last-child { border-bottom:none; }
+        .receipt-total { font-size:16px; font-weight:800; color:var(--accent-indigo); }
+        .qr-container { display:flex; flex-direction:column; align-items:center; gap:10px; padding:20px; background:linear-gradient(135deg, #F9FAFB 0%, #F3F4F6 100%); border-radius:12px; margin-bottom:16px; border:2px dashed var(--border-color); }
+        .qr-display { width:200px; height:200px; background:#fff; border-radius:8px; display:flex; align-items:center; justify-content:center; border:1px solid var(--border-color); padding:10px; }
+        .qr-text { font-size:11px; color:var(--text-muted); font-family:monospace; word-break:break-all; max-width:200px; text-align:center; }
+        .qr-hint { font-size:12px; color:var(--text-muted); font-weight:500; text-align:center; width:100%; }
+    </style>
+</head>
+<body>
+<nav class="citizen-nav">
+    <div class="logo-section" onclick="window.location.reload();" title="Refresh">
+        <div class="ios-pulse-icon"><svg viewBox="0 0 100 100"><defs><linearGradient id="pg" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:rgba(79,70,229,0.1)"/><stop offset="50%" style="stop-color:rgba(79,70,229,1)"/><stop offset="100%" style="stop-color:rgba(79,70,229,0.1)"/></linearGradient></defs><rect x="15" y="32" width="70" height="6" rx="3" fill="#F3F4F6"/><rect x="15" y="47" width="70" height="6" rx="3" fill="#F3F4F6"/><rect x="15" y="62" width="70" height="6" rx="3" fill="#F3F4F6"/><rect x="15" y="32" width="30" height="6" rx="3" fill="url(#pg)" class="p-line p1"/><rect x="15" y="47" width="30" height="6" rx="3" fill="url(#pg)" class="p-line p2"/><rect x="15" y="62" width="30" height="6" rx="3" fill="url(#pg)" class="p-line p3"/></svg></div>
+        <div class="logo-text"><h1>TrafficGuard</h1></div>
+    </div>
+    <div class="nav-links">
+        <a href="/citizen-dashboard.html" class="nav-link">Overview</a>
+        <a href="/citizen-violations.html" class="nav-link active">My E-Challans</a>
+        <a href="/citizen-profile.html" class="nav-link">Manage Vehicles</a>
+    </div>
+    <div class="nav-profile" onclick="toggleDropdown(event)">
+        <div style="text-align:right;"><span id="nav-name" style="font-size:13px;font-weight:600;">Loading...</span><br><span style="font-size:11px;color:gray;">View Profile ▼</span></div>
+        <div class="avatar" id="nav-avatar">?</div>
+        <div class="profile-dropdown" id="pDrop" onclick="event.stopPropagation()">
+            <div class="dropdown-header"><div class="avatar-large" id="dd-avatar">?</div><div><h4 id="dd-name">Loading...</h4><span id="dd-email" style="font-size:12px;color:var(--text-muted);">—</span><br><span class="verified-badge">✓ Verified Citizen ID</span></div></div>
+            <div class="dropdown-body">
+                <div class="info-row-mini"><span>Phone</span><strong id="dd-phone">—</strong></div>
+                <div class="info-row-mini"><span>Aadhaar</span><strong id="dd-aadhaar">—</strong></div>
+            </div>
+            <a href="#" onclick="API.logout()" class="logout-btn-full">[→ Secure Sign Out</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="page-header-row">
+        <div><h1>Citation History</h1><p>Review your past and pending traffic violations.</p></div>
+        <div class="filter-group">
+            <input type="text" class="search-box" id="search-input" placeholder="🔍 Search Challan ID or Plate #" oninput="filterViolations()">
+            <div class="status-filters">
+                <div class="filter-btn active" onclick="setFilter('all',this)">All</div>
+                <div class="filter-btn" onclick="setFilter('pending',this)">Pending</div>
+                <div class="filter-btn" onclick="setFilter('overdue',this)">Overdue</div>
+                <div class="filter-btn" onclick="setFilter('paid',this)">Paid</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Bar -->
+    <div class="summary-bar">
+        <div class="sum-card"><div class="sum-val" id="s-total">—</div><div class="sum-label">Total Challans</div></div>
+        <div class="sum-card"><div class="sum-val" id="s-pending" style="color:#991B1B;">—</div><div class="sum-label">Pending</div></div>
+        <div class="sum-card"><div class="sum-val" id="s-paid" style="color:#065F46;">—</div><div class="sum-label">Paid</div></div>
+        <div class="sum-card"><div class="sum-val" id="s-due" style="color:#7C3AED;">—</div><div class="sum-label">Amount Due</div></div>
+    </div>
+
+    <div id="violations-container">
+        <p style="color:var(--text-muted);text-align:center;padding:40px;">Loading challans...</p>
+    </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal-overlay" id="payModal">
+    <div class="modal-box">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+            <h3 style="margin:0;font-size:18px;font-weight:800;">🔒 Secure Payment</h3>
+            <button onclick="closePayModal()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;transition:all .2s;padding:0;hover-color:#333;">✕</button>
+        </div>
+        <div style="background:#F9FAFB;border-radius:12px;padding:14px;margin-bottom:20px;">
+            <div style="font-size:13px;color:var(--text-muted);">Challan: <strong id="pay-challan">—</strong></div>
+            <div style="font-size:13px;color:var(--text-muted);">Violation: <strong id="pay-type">—</strong></div>
+            <div style="font-size:22px;font-weight:800;margin-top:8px;" id="pay-amount">₹0</div>
+        </div>
+        <div class="pay-methods">
+            <button class="pay-method-btn active" onclick="switchPayMethod('card',this)">💳 Card</button>
+            <button class="pay-method-btn" onclick="switchPayMethod('upi',this)">📱 UPI</button>
+            <button class="pay-method-btn" onclick="switchPayMethod('qr',this)">📲 QR Code</button>
+            <button class="pay-method-btn" onclick="switchPayMethod('netbanking',this)">🏦 Banking</button>
+        </div>
+        <div id="card-form">
+            <div class="pay-field"><label>Name on Card</label><input type="text" placeholder="e.g. Rahul Sharma" id="card-name"></div>
+            <div class="pay-field"><label>Card Number</label><input type="text" placeholder="0000 0000 0000 0000" maxlength="19" id="card-number" oninput="formatCard(this)"></div>
+            <div class="pay-grid-2">
+                <div class="pay-field"><label>Expiry</label><input type="text" placeholder="MM/YY" maxlength="5" id="card-expiry"></div>
+                <div class="pay-field"><label>CVV</label><input type="password" placeholder="•••" maxlength="3" id="card-cvv"></div>
+            </div>
+        </div>
+        <div id="upi-form" style="display:none;">
+            <div class="pay-field"><label>UPI ID / VPA</label><input type="text" placeholder="e.g. name@okaxis" id="upi-id"></div>
+        </div>
+        <div id="qr-form" style="display:none;">
+            <div style="text-align:center;padding:20px;background:#F9FAFB;border-radius:12px;margin-bottom:16px;">
+                <div id="qr-code" style="display:inline-block;padding:20px;background:#fff;border-radius:12px;border:2px solid var(--border-color);"></div>
+                <p style="font-size:12px;color:var(--text-muted);margin-top:12px;">Scan with any UPI app to complete payment</p>
+            </div>
+            <div class="pay-field">
+                <label style="font-weight:700;">Or enter Reference ID after payment:</label>
+                <input type="text" id="qr-ref-id" placeholder="e.g. TRF202601230000123" style="width:100%;padding:11px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px;outline:none;">
+            </div>
+        </div>
+        <div id="netbanking-form" style="display:none;">
+            <div class="pay-field"><label>Select Bank</label>
+                <select style="width:100%;padding:11px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px;outline:none;" id="bank-select">
+                    <option value="SBI">State Bank of India</option><option value="HDFC">HDFC Bank</option><option value="ICICI">ICICI Bank</option><option value="AXIS">Axis Bank</option><option value="KOTAK">Kotak Mahindra</option>
+                </select>
+            </div>
+        </div>
+        <button class="btn-pay-large" id="pay-btn" onclick="processPayment()">🔒 Pay Securely</button>
+        <div class="secure-note">🔐 256-bit SSL Encrypted &nbsp;|&nbsp; RBI Compliant</div>
+        <div style="display:flex;gap:10px;margin-top:12px;">
+            <button onclick="closePayModal()" style="flex:1;padding:12px;border:1px solid var(--border-color);border-radius:10px;background:#fff;font-size:14px;font-weight:600;cursor:pointer;color:var(--text-muted);transition:all .2s;">⨯ Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Evidence Modal -->
+<div class="modal-overlay" id="evidenceModal">
+    <div class="modal-box" style="max-width:440px;width:95%;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <div>
+                <h3 style="margin:0;font-size:16px;font-weight:800;color:var(--text-dark);">📸 Violation Evidence</h3>
+                <p style="margin:4px 0 0 0;font-size:11px;color:var(--text-muted);">Photo captured by traffic officer</p>
+            </div>
+            <button onclick="closeEvidenceModal()" style="background:#F3F4F6;border:none;font-size:18px;cursor:pointer;color:#333;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:all .2s;padding:0;" onmouseover="this.style.background='#E5E7EB'" onmouseout="this.style.background='#F3F4F6'">✕</button>
+        </div>
+        <div id="evidence-content" style="text-align:center;min-height:180px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg, #F9FAFB 0%, #F3F4F6 100%);border-radius:12px;overflow:hidden;margin-bottom:12px;">
+            <p style="color:var(--text-muted);">Loading evidence...</p>
+        </div>
+        <div id="evidence-meta" style="font-size:13px;color:var(--text-muted);"></div>
+        <button onclick="closeEvidenceModal()" style="width:100%;padding:14px;border:none;border-radius:12px;background:#000;font-size:14px;font-weight:700;cursor:pointer;color:#fff;margin-top:16px;transition:opacity .2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">✕ Close</button>
+    </div>
+</div>
+
+<!-- Receipt Modal -->
+<div class="modal-overlay" id="receiptModal">
+    <div class="modal-box receipt-modal">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+            <div style="text-align:left;flex:1;">
+                <div style="font-size:40px;margin-bottom:8px;">✅</div>
+                <h3 style="color:#065F46;margin:0 0 4px 0;font-size:18px;font-weight:800;">Payment Successful!</h3>
+                <p style="font-size:12px;color:var(--text-muted);margin:0;">Your e-challan has been cleared.</p>
+            </div>
+            <button onclick="closeReceiptAndRefresh()" style="background:none;border:none;font-size:24px;cursor:pointer;color:var(--text-muted);width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;transition:all .2s;padding:0;flex-shrink:0;">✕</button>
+        </div>
+        <div id="receipt-body"></div>
+        <div style="display:flex;gap:10px;margin-top:16px;">
+            <button onclick="closeReceiptAndRefresh()" class="btn-pay-large" style="flex:1;">✓ Done & Close</button>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/api.js"></script>
+<script>
+    if (!API.requireRole('citizen')) {}
+
+    let allViolations = [];
+    let currentFilter = 'all';
+    let currentPayId = null;
+    let currentPayAmount = 0;
+
+    function toggleDropdown(e) { if(e) e.stopPropagation(); document.getElementById('pDrop').classList.toggle('active'); }
+    document.addEventListener('click', () => document.getElementById('pDrop').classList.remove('active'));
+
+    function setFilter(f, el) {
+        currentFilter = f;
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+        filterViolations();
+    }
+
+    function filterViolations() {
+        const q = document.getElementById('search-input').value.toLowerCase();
+        let filtered = allViolations.filter(v => {
+            const matchQ = !q || v.challan_number.toLowerCase().includes(q) || v.plate_number.toLowerCase().includes(q) || v.violation_type.toLowerCase().includes(q);
+            const matchF = currentFilter === 'all' || v.status === currentFilter;
+            return matchQ && matchF;
+        });
+        renderViolations(filtered);
+    }
+
+    const iconMap = { 'Signal Jumping':'🚦','Speeding':'⚡','No Helmet':'🪖','No Seatbelt':'🪢','Using Mobile Phone':'📵','Drunk Driving':'🍺','Wrong Way Driving':'⛔','Triple Riding':'🏍️','Without Insurance':'📋','Defective Number Plate':'🔢' };
+    const colorMap = { pending:'icon-red', overdue:'icon-orange', paid:'icon-green', contested:'icon-blue', cancelled:'icon-blue' };
+
+    function renderViolations(violations) {
+        const el = document.getElementById('violations-container');
+        if (!violations.length) {
+            el.innerHTML = '<div class="empty-state"><div style="font-size:48px;">🎉</div><h3>No challans found</h3><p>No violations matching your search criteria.</p></div>';
+            return;
+        }
+        el.innerHTML = violations.map(v => {
+            const isPaid = v.status === 'paid' || v.status === 'cancelled';
+            const icon = iconMap[v.violation_type] || '⚠️';
+            const colorClass = colorMap[v.status] || 'icon-orange';
+            const badgeClass = { pending:'badge-unpaid', overdue:'badge-overdue', paid:'badge-settled', contested:'badge-contested', cancelled:'badge-settled' }[v.status] || 'badge-unpaid';
+            const badgeText = { pending:'UNPAID', overdue:'OVERDUE', paid:'SETTLED', contested:'CONTESTED', cancelled:'CANCELLED' }[v.status] || v.status.toUpperCase();
+
+            return `<div class="challan-card">
+                <div class="c-icon-box ${colorClass}">${icon}</div>
+                <div class="c-details">
+                    <div class="c-header">
+                        <span class="c-title">${v.violation_type}</span>
+                        <span class="status-badge ${badgeClass}">${badgeText}</span>
+                    </div>
+                    <p class="c-meta">
+                        Challan ID: <strong>${v.challan_number}</strong> &nbsp;|&nbsp; Vehicle: <strong>${v.plate_number}</strong><br>
+                        Date: <strong>${fmtDateTime(v.issued_at)}</strong> &nbsp;|&nbsp; Location: <strong>${v.location || '—'}</strong><br>
+                        Issued By: <strong>${v.officer_name || 'Traffic Enforcement'}</strong> ${v.badge_id ? `(${v.badge_id})` : ''}<br>
+                        ${v.status === 'paid' ? `<span style="color:#065F46;font-weight:600;">✅ Paid on: ${fmtDate(v.paid_at)}</span>` : `Due: <strong style="color:${v.status==='overdue'?'#991B1B':'inherit'}">${fmtDate(v.due_date)}</strong>`}
+                    </p>
+                </div>
+                <div class="c-action-area">
+                    <p class="c-amount-due">${isPaid ? 'AMOUNT PAID' : 'AMOUNT DUE'}</p>
+                    <p class="c-price">${fmtINR(v.fine_amount)}</p>
+                    <div style="display:flex;flex-direction:column;gap:6px;width:100%;">
+                        ${v.evidence_path ? `<button class="btn-evidence" onclick="viewEvidence('${v.evidence_path}','${(v.violation_type||'').replace(/'/g,"\\'")}','${(v.plate_number||'').replace(/'/g,"\\'")}')">📸 View Evidence</button>` : ''}
+                        ${!isPaid ? `<button class="btn-pay-secure" onclick="openPayModal(${v.id},'${v.challan_number}','${v.violation_type}',${v.fine_amount})">💰 Pay Now</button>` : `<button class="btn-download" onclick="downloadReceipt('${v.challan_number}',${v.fine_amount},'${v.violation_type}')">📥 Download Receipt</button>`}
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function openPayModal(id, challan, type, amount) {
+        currentPayId = id;
+        currentPayAmount = amount;
+        document.getElementById('pay-challan').textContent = challan;
+        document.getElementById('pay-type').textContent = type;
+        document.getElementById('pay-amount').textContent = fmtINR(amount);
+        document.getElementById('pay-btn').textContent = `🔒 Pay ${fmtINR(amount)} Securely`;
+        document.getElementById('payModal').classList.add('active');
+    }
+
+    function closePayModal() { document.getElementById('payModal').classList.remove('active'); }
+
+    let currentPayMethod = 'card';
+
+    function switchPayMethod(method, el) {
+        currentPayMethod = method;
+        document.querySelectorAll('.pay-method-btn').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+        document.getElementById('card-form').style.display = method === 'card' ? 'block' : 'none';
+        document.getElementById('upi-form').style.display = method === 'upi' ? 'block' : 'none';
+        document.getElementById('qr-form').style.display = method === 'qr' ? 'block' : 'none';
+        document.getElementById('netbanking-form').style.display = method === 'netbanking' ? 'block' : 'none';
+        
+        // Generate QR code when QR method is selected
+        if (method === 'qr') {
+            generateQRCode();
+        }
+    }
+
+    function generateQRCode() {
+        const qrContainer = document.getElementById('qr-code');
+        const paymentAmount = currentPayAmount;
+        const challanId = document.getElementById('pay-challan').textContent;
+        
+        // Simple QR data structure: trafficguard://pay?amount=X&challan=Y
+        const qrData = `upi://pay?pa=trafficguard@upi&pn=TrafficGuard&am=${paymentAmount}&tr=${challanId}&tn=Challan${challanId}`;
+        
+        // Display styled QR placeholder
+        qrContainer.innerHTML = `
+            <div class="qr-container">
+                <div class="qr-display">
+                    <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+                        <div style="font-size:48px;">📱</div>
+                        <div style="font-size:13px;font-weight:700;color:#6B7280;">QR Code</div>
+                    </div>
+                </div>
+                <div class="qr-hint">Scan with any UPI app to pay</div>
+                <div class="qr-text">Amount: ₹${paymentAmount} | Ref: ${challanId}</div>
+            </div>
+        `;
+        
+        // In production, use: https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.js
+        // Then call: new QRCode(document.querySelector('.qr-display'), { 
+        //     text: qrData, 
+        //     width: 180, 
+        //     height: 180,
+        //     colorDark: '#000',
+        //     colorLight: '#fff'
+        // });
+    }
+
+    function formatCard(el) {
+        let v = el.value.replace(/\D/g,'').substring(0,16);
+        el.value = v.replace(/(.{4})/g,'$1 ').trim();
+    }
+
+    async function processPayment() {
+        const btn = document.getElementById('pay-btn');
+        btn.textContent = '⏳ Processing...';
+        btn.disabled = true;
+        try {
+            let paymentMethod = 'online';
+            let methodDetails = {};
+            
+            if (currentPayMethod === 'card') {
+                const cardNum = document.getElementById('card-number').value.replace(/\s/g, '');
+                if (cardNum.length !== 16) {
+                    showToast('Please enter a valid 16-digit card number', 'error');
+                    return;
+                }
+                paymentMethod = 'card';
+                methodDetails = { card_last4: cardNum.slice(-4) };
+            } else if (currentPayMethod === 'upi') {
+                const upiId = document.getElementById('upi-id').value.trim();
+                if (!upiId) {
+                    showToast('Please enter your UPI ID', 'error');
+                    return;
+                }
+                paymentMethod = 'upi';
+                methodDetails = { upi_id: upiId };
+            } else if (currentPayMethod === 'qr') {
+                const refId = document.getElementById('qr-ref-id').value.trim();
+                paymentMethod = 'qr';
+                methodDetails = { reference_id: refId || 'manual_verification' };
+            } else if (currentPayMethod === 'netbanking') {
+                const bank = document.getElementById('bank-select').value;
+                paymentMethod = 'netbanking';
+                methodDetails = { bank: bank };
+            }
+            
+            // Simulate payment gateway delay
+            await new Promise(r => setTimeout(r, 1200));
+            
+            const result = await API.post('/api/payments', { 
+                violation_id: currentPayId, 
+                payment_method: paymentMethod,
+                method_details: methodDetails
+            });
+            
+            closePayModal();
+            
+            // Show receipt
+            const methodText = {
+                'card': '💳 Credit/Debit Card',
+                'upi': '📱 UPI',
+                'qr': '📲 QR Code',
+                'netbanking': '🏦 Net Banking',
+                'online': 'Online'
+            }[paymentMethod] || 'Online';
+            
+            document.getElementById('receipt-body').innerHTML = `
+                <div class="receipt-row"><span>Transaction ID</span><strong>${result.transaction_id}</strong></div>
+                <div class="receipt-row"><span>Amount Paid</span><strong class="receipt-total">${fmtINR(result.amount)}</strong></div>
+                <div class="receipt-row"><span>Payment Method</span><strong>${methodText}</strong></div>
+                <div class="receipt-row"><span>Challan ID</span><strong>${document.getElementById('pay-challan').textContent}</strong></div>
+                <div class="receipt-row"><span>Date & Time</span><strong>${fmtDateTime(new Date().toISOString())}</strong></div>
+            `;
+            document.getElementById('receiptModal').classList.add('active');
+        } catch(err) {
+            showToast('Payment failed: ' + err.message, 'error');
+        } finally {
+            btn.textContent = `🔒 Pay ${fmtINR(currentPayAmount)} Securely`;
+            btn.disabled = false;
+        }
+    }
+
+    function closeReceiptAndRefresh() {
+        document.getElementById('receiptModal').classList.remove('active');
+        loadViolations();
+    }
+
+    function viewEvidence(path, violationType, plateNumber) {
+        const modal = document.getElementById('evidenceModal');
+        const content = document.getElementById('evidence-content');
+        const meta = document.getElementById('evidence-meta');
+        content.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px;"><div style="font-size:20px;">📸</div><p style="color:var(--text-muted);">Loading evidence photo...</p></div>';
+        meta.innerHTML = '';
+        modal.classList.add('active');
+        // Try to display as image
+        const img = new Image();
+        img.onload = function() {
+            content.innerHTML = `<img src="${path}" alt="Evidence" style="max-width:100%;max-height:480px;border-radius:12px;object-fit:contain;box-shadow:0 4px 16px rgba(0,0,0,0.1);">`;
+            meta.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;padding:16px;background:#F9FAFB;border-radius:12px;">
+                <div>
+                    <span style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;display:block;margin-bottom:6px;">📋 Violation Type</span>
+                    <strong style="color:var(--text-dark);font-size:14px;">${violationType || '—'}</strong>
+                </div>
+                <div>
+                    <span style="font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;display:block;margin-bottom:6px;">🚗 Vehicle Plate</span>
+                    <strong style="color:var(--text-dark);font-size:14px;">${plateNumber || '—'}</strong>
+                </div>
+            </div>`;
+        };
+        img.onerror = function() {
+            content.innerHTML = `<div style="padding:48px;text-align:center;">
+                <div style="font-size:64px;margin-bottom:16px;">📄</div>
+                <p style="font-weight:700;font-size:16px;color:var(--text-dark);margin-bottom:8px;">Cannot Display Evidence</p>
+                <p style="font-size:14px;color:var(--text-muted);margin-bottom:20px;">The evidence file could not be loaded as an image.</p>
+                <a href="${path}" target="_blank" style="color:#fff;font-weight:700;text-decoration:none;display:inline-block;padding:12px 24px;background:var(--accent-indigo);border-radius:10px;transition:all .3s;">↗ Open File in New Tab</a>
+            </div>`;
+            meta.innerHTML = `<div style="margin-top:16px;padding:12px;background:#FEF2F2;border-radius:10px;border-left:4px solid #EF4444;">
+                <strong style="color:var(--text-dark);">⚠️ Violation:</strong> ${violationType || '—'}
+            </div>`;
+        };
+        img.src = path;
+    }
+
+    function closeEvidenceModal() {
+        document.getElementById('evidenceModal').classList.remove('active');
+    }
+
+    function downloadReceipt(challan, amount, type) {
+        const content = `TRAFFIC GUARD TVM\nPAYMENT RECEIPT\n\nChallan: ${challan}\nViolation: ${type}\nAmount: ${fmtINR(amount)}\nStatus: PAID\nGenerated: ${new Date().toLocaleString('en-IN')}\n\nThank you for clearing your dues.`;
+        const blob = new Blob([content], {type:'text/plain'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `receipt_${challan}.txt`;
+        a.click();
+    }
+
+    async function loadViolations() {
+        try {
+            const profile = await API.get('/api/profile');
+            const initials = (profile.full_name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+            document.getElementById('nav-name').textContent = profile.full_name || 'Citizen';
+            document.getElementById('nav-avatar').textContent = initials;
+            document.getElementById('dd-avatar').textContent = initials;
+            document.getElementById('dd-name').textContent = profile.full_name || '—';
+            document.getElementById('dd-email').textContent = profile.email || '—';
+            document.getElementById('dd-phone').textContent = profile.phone || '—';
+            document.getElementById('dd-aadhaar').textContent = profile.aadhaar || 'Not linked';
+
+            allViolations = await API.get('/api/violations');
+            const pending = allViolations.filter(v => v.status === 'pending' || v.status === 'overdue');
+            const paid = allViolations.filter(v => v.status === 'paid');
+            const due = pending.reduce((s,v) => s + (v.fine_amount||0), 0);
+
+            document.getElementById('s-total').textContent = allViolations.length;
+            document.getElementById('s-pending').textContent = pending.length;
+            document.getElementById('s-paid').textContent = paid.length;
+            document.getElementById('s-due').textContent = fmtINR(due);
+
+            filterViolations();
+        } catch(err) {
+            document.getElementById('violations-container').innerHTML = `<div class="empty-state"><p style="color:#991B1B;">Failed to load challans: ${err.message}</p></div>`;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', async function() {
+        await loadViolations();
+        
+        // Check if coming from overview page with payment data
+        const paymentViolationId = sessionStorage.getItem('paymentViolationId');
+        if (paymentViolationId) {
+            const challan = sessionStorage.getItem('paymentChallan');
+            const amount = parseFloat(sessionStorage.getItem('paymentAmount'));
+            
+            // Find the violation in our loaded data
+            const violation = allViolations.find(v => v.id == paymentViolationId);
+            if (violation) {
+                // Small delay to ensure UI is rendered
+                setTimeout(() => {
+                    openPayModal(paymentViolationId, challan, violation.violation_type, amount);
+                }, 500);
+            }
+            
+            // Clear session data
+            sessionStorage.removeItem('paymentViolationId');
+            sessionStorage.removeItem('paymentChallan');
+            sessionStorage.removeItem('paymentAmount');
+        }
+    });
+</script>
+</body>
+</html>

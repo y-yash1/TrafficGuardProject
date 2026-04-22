@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traffic Guard | Secure Portal</title>
+    <link rel="stylesheet" href="/static/css/loginstyle.css">
+    <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        .background-overlay {
+            background-image: url('/static/images/citizen.jpg');
+            background-size: cover;
+            background-position: center;
+            animation: slowSwitch 40s infinite steps(1);
+        }
+        @keyframes slowSwitch {
+            0%   { background-image: url('/static/images/citizen.jpg'); }
+            25%  { background-image: url('/static/images/admin.jpg'); }
+            50%  { background-image: url('/static/images/officer.jpg'); }
+            75%  { background-image: url('/static/images/image2.jpg'); }
+            100% { background-image: url('/static/images/citizen.jpg'); }
+        }
+        .error-msg { color:#ff3b30; font-size:12px; font-weight:600; margin:-15px 0 10px; text-align:center; }
+        .loading { opacity:0.7; pointer-events:none; }
+        .demo-creds { font-size:10px; color:var(--text-dim); margin-top:12px; line-height:1.6; }
+        .demo-creds b { color:var(--text-main); }
+        /* Ensure consistent width for all panels */
+        .glass-panel { width:420px; max-width:95vw; }
+        /* Single eye icon fix */
+        .input-group .toggle-password {
+            position:absolute; right:5px; top:14px; cursor:pointer;
+            color:var(--text-dim); transition:color 0.3s ease;
+            display:flex; align-items:center; justify-content:center; z-index:2;
+        }
+        .input-group .toggle-password:hover { color:var(--primary); }
+    </style>
+</head>
+<body data-user="citizen">
+    <div class="background-overlay"></div>
+    <div class="login-container">
+        <div class="glass-panel" id="main-panel">
+            <div class="badge-icon">
+                <div class="scanner-line"></div>
+                <img id="role-icon" src="/static/images/citizen.png" alt="Role Icon">
+            </div>
+            <div class="header">
+                <h1 id="main-title">TRAFFIC GUARD</h1>
+                <p id="sub-title">Public Violation Portal</p>
+            </div>
+
+            <!-- LOGIN SECTION -->
+            <div id="login-section">
+                <div class="role-tabs">
+                    <button type="button" class="tab-btn active" onclick="updateTheme('citizen', this)">CITIZEN</button>
+                    <button type="button" class="tab-btn" onclick="updateTheme('officer', this)">OFFICER</button>
+                    <button type="button" class="tab-btn" onclick="updateTheme('admin', this)">ADMIN</button>
+                </div>
+                <div id="error-msg" class="error-msg" style="display:none"></div>
+                <form class="auth-form" id="login-form">
+                    <div class="input-group">
+                        <input type="text" id="username" required placeholder=" ">
+                        <label id="user-label">Email Address</label>
+                    </div>
+                    <div class="input-group">
+                        <input type="password" id="password" required placeholder=" ">
+                        <label id="pass-label">Password</label>
+                        <span class="toggle-password" onclick="togglePwd('password','login-eye')">
+                            <svg id="login-eye" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </span>
+                    </div>
+                    <div class="session-info">
+                        <label class="remember-me"><input type="checkbox" checked> <span>Encrypted Session</span></label>
+                        <span class="divider" id="create-divider">|</span>
+                        <span class="create-link" id="toggle-link" onclick="toggleForm('reg')">Create Account</span>
+                    </div>
+                    <button type="submit" class="submit-btn" id="login-btn"><span class="btn-text">CHECK VIOLATIONS</span></button>
+                </form>
+
+            </div>
+
+            <!-- REGISTER SECTION -->
+            <div id="register-section" style="display:none;">
+                <h3 style="font-size:14px;font-weight:700;margin-bottom:16px;text-align:center;letter-spacing:1px;">CREATE CITIZEN ACCOUNT</h3>
+                <div id="reg-error" class="error-msg" style="display:none"></div>
+                <form class="auth-form" id="register-form">
+                    <div class="grid-2">
+                        <div class="input-group"><input type="text" name="full_name" required placeholder=" "><label>Full Name</label></div>
+                        <div class="input-group"><input type="tel" name="phone" required placeholder=" "><label>Phone</label></div>
+                    </div>
+                    <div class="input-group"><input type="email" name="email" required placeholder=" "><label>Email Address</label></div>
+                    <div class="input-group">
+                        <input type="text" name="aadhaar" maxlength="12" placeholder=" " oninput="this.value=this.value.replace(/\D/g,'').slice(0,12)">
+                        <label>Aadhaar Number (12 digits)</label>
+                    </div>
+                    <div class="input-group">
+                        <input type="password" name="password" id="reg-password" required placeholder=" ">
+                        <label>Password</label>
+                        <span class="toggle-password" onclick="togglePwd('reg-password','reg-eye')">
+                            <svg id="reg-eye" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </span>
+                    </div>
+                    <button type="submit" class="submit-btn"><span>REGISTER CITIZEN ID</span></button>
+                    <p class="create-link" style="margin-top:15px;text-align:center;" onclick="toggleForm('login')">← Back to Login</p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function togglePwd(inputId, iconId) {
+            const p = document.getElementById(inputId);
+            const eye = document.getElementById(iconId);
+            if (p.type === 'password') {
+                p.type = 'text';
+                eye.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+            } else {
+                p.type = 'password';
+                eye.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+            }
+        }
+
+        function updateTheme(role, element) {
+            document.body.setAttribute('data-user', role);
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            element.classList.add('active');
+            document.getElementById('error-msg').style.display = 'none';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            if (role !== 'citizen') toggleForm('login');
+
+            const configs = {
+                citizen: {sub:'Public Violation Portal', icon:'/static/images/citizen.png', btn:'CHECK VIOLATIONS', user:'Email Address', pass:'Password', showReg:true},
+                officer: {sub:'Enforcement Dashboard', icon:'/static/images/officer.png', btn:'OFFICER LOGIN', user:'Badge ID / Username', pass:'Department Password', showReg:false},
+                admin:   {sub:'Central Command Center', icon:'/static/images/admin.png', btn:'AUTHENTICATE COMMAND', user:'Admin Username', pass:'Root Security Key', showReg:false}
+            };
+            const c = configs[role];
+            document.getElementById('sub-title').innerText = c.sub;
+            document.getElementById('role-icon').src = c.icon;
+            document.querySelector('.btn-text').innerText = c.btn;
+            document.getElementById('user-label').innerText = c.user;
+            document.getElementById('pass-label').innerText = c.pass;
+            document.getElementById('create-divider').style.display = c.showReg ? 'inline' : 'none';
+            document.getElementById('toggle-link').style.display = c.showReg ? 'inline' : 'none';
+        }
+
+        function toggleForm(target) {
+            document.getElementById('login-section').style.display = target === 'reg' ? 'none' : 'block';
+            document.getElementById('register-section').style.display = target === 'reg' ? 'block' : 'none';
+        }
+
+        document.getElementById('login-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const role = document.body.getAttribute('data-user');
+            const errEl = document.getElementById('error-msg');
+            const btn = document.getElementById('login-btn');
+            errEl.style.display = 'none';
+            btn.classList.add('loading');
+            btn.querySelector('.btn-text').textContent = 'Authenticating...';
+            try {
+                const resp = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username, password, role})
+                });
+                const data = await resp.json();
+                if (!resp.ok) {
+                    errEl.textContent = data.error || 'Login failed';
+                    errEl.style.display = 'block';
+                } else {
+                    localStorage.setItem('tg_token', data.token);
+                    localStorage.setItem('tg_user', JSON.stringify(data.user));
+                    if (role === 'admin') window.location.href = '/admin-dashboard.html';
+                    else if (role === 'officer') window.location.href = '/dashboard.html';
+                    else window.location.href = '/citizen-dashboard.html';
+                }
+            } catch(err) {
+                errEl.textContent = 'Connection error. Please try again.';
+                errEl.style.display = 'block';
+            } finally {
+                btn.classList.remove('loading');
+                const r = document.body.getAttribute('data-user');
+                btn.querySelector('.btn-text').textContent = r === 'citizen' ? 'CHECK VIOLATIONS' : r === 'officer' ? 'OFFICER LOGIN' : 'AUTHENTICATE COMMAND';
+            }
+        });
+
+        document.getElementById('register-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const form = e.target;
+            const errEl = document.getElementById('reg-error');
+            const aadhaar = (form.aadhaar.value || '').trim();
+            if (aadhaar && aadhaar.length !== 12) {
+                errEl.textContent = 'Aadhaar number must be exactly 12 digits.';
+                errEl.style.display = 'block';
+                return;
+            }
+            const data = {
+                full_name: form.full_name.value.trim(),
+                phone: form.phone.value.trim(),
+                email: form.email.value.trim(),
+                aadhaar: aadhaar,
+                password: form.password.value.trim()
+            };
+            errEl.style.display = 'none';
+            try {
+                const resp = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                const result = await resp.json();
+                if (!resp.ok) {
+                    errEl.textContent = result.error || 'Registration failed';
+                    errEl.style.display = 'block';
+                } else {
+                    alert('Registration successful!\nPlease login with your email and password.');
+                    toggleForm('login');
+                }
+            } catch(err) {
+                errEl.textContent = 'Connection error.';
+                errEl.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
