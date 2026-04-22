@@ -84,6 +84,15 @@
                 <p style="font-size:13px;color:var(--text-muted);padding:12px 0;">Loading...</p>
             </div>
         </div>
+
+        <div class="ft-card">
+            <div class="card-header">
+                <span class="card-title">🛣️ Road Safety & Traffic Updates</span>
+            </div>
+            <div id="traffic-news-list" style="max-height: 250px; overflow-y: auto;">
+                <p style="font-size:13px;color:var(--text-muted);padding:12px 0;">Loading updates...</p>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -194,6 +203,22 @@
         }
     }
 
+    async function loadTrafficNews() {
+        try {
+            const news = await API.get('/api/traffic-news');
+            const el = document.getElementById('traffic-news-list');
+            if (!news.length) { el.innerHTML = '<p style="font-size:13px;color:var(--text-muted);padding:12px 0;">No updates available</p>'; return; }
+            el.innerHTML = news.slice(0, 5).map(n => `
+                <div style="padding:12px 0; border-bottom:1px solid var(--border-color);">
+                    <a href="${n.link}" target="_blank" rel="noopener" style="color:var(--accent-indigo);text-decoration:none;font-size:13px;font-weight:600;display:block;margin-bottom:4px;">${n.title}</a>
+                    <div style="font-size:11px;color:var(--text-muted);">📰 ${n.source}${n.published ? ' • ' + new Date(n.published).toLocaleDateString('en-IN',{day:'2-digit',month:'short'}) : ''}</div>
+                </div>
+            `).join('');
+        } catch(e) {
+            document.getElementById('traffic-news-list').innerHTML = '<p style="font-size:13px;color:var(--text-muted);padding:12px 0;">Unable to load news</p>';
+        }
+    }
+
     let currentPayId = null;
     let currentPayAmount = 0;
     let currentPayMethod = 'card';
@@ -268,7 +293,10 @@
         loadDashboard();
     }
 
-    document.addEventListener('DOMContentLoaded', loadDashboard);
+    document.addEventListener('DOMContentLoaded', () => {
+        loadDashboard();
+        loadTrafficNews();
+    });
 </script>
 <!-- Evidence Modal -->
 <div id="evidenceModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);z-index:9999;align-items:center;justify-content:center;">

@@ -1127,7 +1127,7 @@ _news_cache = {"data": None, "expires": 0}
 
 
 @app.route("/api/traffic-news", methods=["GET"])
-@require_auth("officer", "admin")
+@require_auth()
 def get_traffic_news():
     """Fetch live traffic/road safety news from Google News RSS for India/Telangana"""
     import time
