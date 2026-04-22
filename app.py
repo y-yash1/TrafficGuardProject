@@ -11,6 +11,9 @@ from flask import Flask, request, jsonify, session, send_from_directory, abort
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "database"))
 from schema import get_db, hash_password, init_db, DB_PATH
 
+# Initialize database on startup
+init_db()
+
 app = Flask(__name__, static_folder="static", template_folder="templates")
 app.secret_key = secrets.token_hex(32)
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB upload limit
